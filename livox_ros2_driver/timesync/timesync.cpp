@@ -23,7 +23,7 @@
 //
 
 #include "timesync.h"
-
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <thread>
