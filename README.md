@@ -72,15 +72,21 @@ If you would like to compile livox_ros2_driver, be sure to delete/rename the "li
 
 ### 3.2 ROS2 launch load command example
 
-   In lidar connection mode, the commands to load livox_ros2_driver and rviz2 are as follows :
-   `ros2 launch livox_lidar_rviz_launch.py`
+   In lidar connection mode, the commands to load livox_ros2_driver are as follows :
+   `ros2 launch livox.launch.yaml data_src:=0`
 
-   In hub connection mode, the commands to load livox_ros2_driver and rviz2 are as follows :
-   `ros2 launch livox_hub_rviz_launch.py`
+   In hub connection mode, the commands to load livox_ros2_driver are as follows :
+   `ros2 launch livox.launch.yaml data_src:=1`
+
+   In lidar connection mode, the commands to load livox_ros2_driver as intra-process mode (rclcpp_component) are as follows :
+   `ros2 launch livox_component.launch.yaml data_src:=0`
+
+   In hub connection mode, the commands to load livox_ros2_driver as intra-process mode (rclcpp_component) are as follows :
+   `ros2 launch livox_component.launch.yaml data_src:=1`
 
 ### 3.3 ROS2 launch loads livox_ros2_driver precautions
 
-1. The launch method of ros2 is completely different from that of ros1. The launch file of ros2 is actually a python script;
+1. The launch method of ros2 is completely different from that of ros1. The launch file of ros2 is actually a ~~python script~~ yaml file;
 
 2. The ros2 driver no longer supports specifying the LiDAR device to be connected under the command line, and only supports configuring the corresponding LiDAR broadcast code and other parameters in the json configuration file;
 
@@ -108,12 +114,8 @@ All launch files of livox_ros2_driver are in the "ws_livox/src/livox_ros2_driver
 
 | launch file name          | Description                                                  |
 | ------------------------- | ------------------------------------------------------------ |
-| livox_lidar_rviz_launch.py   | Connect to Livox LiDAR device<br>Publish pointcloud2 format data<br>Autoload rviz |
-| livox_hub_rviz_launch.py     | Connect to Livox Hub device<br>Publish pointcloud2 format data<br>Autoload rviz |
-| livox_lidar_launch.py        | Connect to Livox LiDAR device<br>Publish pointcloud2 format data |
-| livox_hub_launch.py          | Connect to Livox LiDAR device<br>Publish pointcloud2 format data |
-| livox_lidar_msg_launch.py    | Connect to Livox LiDAR device<br>Publish livox customized pointcloud data |
-| livox_hub_msg_launch.py      | Connect to Livox Hub device<br>Publish livox customized pointcloud data |
+| livox.launch.yaml            | Connect to Livox LiDAR device<br>Publish pointcloud2 format data |
+| livox_component.launch.yaml  | Intra-process mode (rclcpp_component)<br>Connect to Livox LiDAR device<br>Publish pointcloud2 format data |
 
 ### 4.2 Livox_ros2_driver internal main parameter configuration instructions
 
@@ -124,6 +126,9 @@ All internal parameters of Livox_ros2_driver are in the launch file. Below are d
 | publish_freq | Set the frequency of point cloud publish <br>Floating-point data type, recommended values 5.0, 10.0, 20.0, 50.0, etc. | 10.0    |
 | multi_topic  | If the LiDAR device has an independent topic to publish pointcloud data<br>0 -- All LiDAR devices use the same topic to publish pointcloud data<br>1 -- Each LiDAR device has its own topic to publish point cloud data | 0       |
 | xfer_format  | Set pointcloud format<br>0 -- Livox pointcloud2(PointXYZRTL) pointcloud format<br>1 -- Livox customized pointcloud format<br>2 -- Standard pointcloud2 (pcl :: PointXYZI) pointcloud format in the PCL library | 0       |
+| data_src     | config data source<br>0 -- Connect LiDAR by Ethernet directly <br>1 -- Connect LiDAR by Livox-HUB | 0      |
+| user_config_path | LiDAR config file path | config/livox_lidar_config.json |
+| container_name | only livox_component.launch.yaml requires this parameter<br> name of component_container | /ComponentManager |
 
 &ensp;&ensp;&ensp;&ensp;***livox_ros2_driver pointcloud data detailed description :***
 

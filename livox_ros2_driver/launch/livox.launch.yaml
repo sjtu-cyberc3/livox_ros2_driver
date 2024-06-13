@@ -1,0 +1,65 @@
+launch:
+  - arg:
+      # 0: PointXYZRTL
+      # 1: CustomMsg
+      # 2: PointXYZI (not support yet)
+      name: xfer_format
+      default: '0'
+  - arg:
+      # 0: All LiDARs share the same topic
+      # 1: One LiDAR one topic
+      name: multi_topic
+      default: '0'
+  - arg:
+      # 0: lidar
+      # 1: hub
+      name: data_src
+      default: '0'
+  - arg:
+      # freqency of publish,1.0,2.0,5.0,10.0,etc
+      name: publish_freq
+      default: '10.0'
+  - arg:
+      # 0: publish ros topic
+      # 1: save to rosbag (not support yet)
+      name: output_type
+      default: '0'
+  - arg:
+      # ros topic header.frame_id
+      name: frame_id
+      default: livox_frame
+  - arg:
+      # not support yet
+      name: lvx_file_path
+      default: livox.lvx
+  - arg:
+      name: user_config_path
+      default: $(find-pkg-share livox_ros2_driver)/config/livox_lidar_config.json
+  - arg:
+      name: cmdline_bd_code
+      default: livox0000000001
+  
+  - node:
+      pkg: livox_ros2_driver
+      exec: livox_ros2_driver_node
+      name: livox_lidar_publisher
+      namespace: /driver
+      param:
+        - name: xfer_format
+          value: $(var xfer_format)
+        - name: multi_topic
+          value: $(var multi_topic)
+        - name: data_src
+          value: $(var data_src)
+        - name: publish_freq
+          value: $(var publish_freq)
+        - name: output_data_type
+          value: $(var output_type)
+        - name: frame_id
+          value: $(var frame_id)
+        - name: lvx_file_path
+          value: $(var lvx_file_path)
+        - name: user_config_path
+          value: $(var user_config_path)
+        - name: cmdline_input_bd_code
+          value: $(var cmdline_bd_code)

@@ -1,6 +1,6 @@
 # 览沃 ROS2 驱动程序（ [livox_ros2_driver English README](https://github.com/Livox-SDK/livox_ros2_driver/) ）
 
-览沃 ROS2 驱动程序是基于 ROS2 的驱动程序包，专门用于连接览沃生产的 LiDAR 产品。该驱动程序目前仅推荐在 ubuntu18.04 下运行，对应的 ROS2 版本是 dashing， 暂时不支持 ROS2 其他版本。
+览沃 ROS2 驱动程序是基于 ROS2 的驱动程序包，专门用于连接览沃生产的 LiDAR 产品。~~该驱动程序目前仅推荐在 ubuntu18.04 下运行，对应的 ROS2 版本是 dashing， 暂时不支持 ROS2 其他版本。~~ 支持ubuntu20/22, 对应ROS2版本是humble。
 
 ## 0. 版本和发布记录
 
@@ -74,15 +74,21 @@ colcon 安装请参考如下链接：
 
 ### 3.2 ROS2 launch 命令示例
 
-   lidar 连接模式下，加载 livox_ros2_driver 和 rviz2 的命令如下：
-   `ros2 launch livox_lidar_rviz_launch.py`
+   lidar 连接模式下，加载 livox_ros2_driver的命令如下：
+   `ros2 launch livox.launch.yaml data_src:=0`
 
-   hub 连接模式下，加载 livox_ros2_driver 和 rviz2 的命令如下：
-   `ros2 launch livox_hub_rviz_launch.py`
+   hub 连接模式下，加载 livox_ros2_driver的命令如下：
+   `ros2 launch livox.launch.yaml data_src:=1`
+
+   lidar 连接模式下，以进程内通信模式（rclcpp_component）加载 livox_ros2_driver的命令如下：
+   `ros2 launch livox_component.launch.yaml data_src:=0`
+
+   hub 连接模式下，以进程内通信模式（rclcpp_component）加载 livox_ros2_driver的命令如下：
+   `ros2 launch livox_component.launch.yaml data_src:=1`
 
 ### 3.3 ROS2 使用 launch 加载 livox_ros2_driver 说明
 
-1. ros2 的 launch 加载方式与 ros1 截然不同，ros2 的 launch 文件实际上是 python 脚本；
+1. ros2 的 launch 加载方式与 ros1 截然不同，ros2 的 launch 文件实际上是 ~~python 脚本~~ yaml 文件；
 
 2. ros2 driver 不再支持在命令行下指定将要连接的 LiDAR 设备，只支持在 json 配置文件中配置相应的 LiDAR 广播码和其他参数；
 
@@ -110,12 +116,8 @@ colcon 安装请参考如下链接：
 
 | launch 文件名             | 功能                                                         |
 | ------------------------- | ------------------------------------------------------------ |
-| livox_lidar_rviz_launch.py   | 连接览沃雷达设备<br>向外发布 pointcloud2 格式的点云数据<br>自动加载rviz |
-| livox_hub_rviz_launch.py     | 连接览沃中心板设备<br>向外发布 pointcloud2 格式的点云数据<br>自动加载rviz |
-| livox_lidar_launch.py        | 连接览沃雷达设备<br>向外发布 pointcloud2 格式的点云数据    |
-| livox_hub_launch.py          | 连接览沃中心板设备<br>向外发布 pointcloud2 格式的点云数据  |
-| livox_lidar_msg_launch.py    | 连接览沃雷达设备<br>向外发布览沃自定义点云数据             |
-| livox_hub_msg_launch.py      | 连接览沃中心板设备<br/>向外发布览沃自定义点云数据           |
+| livox.launch.yaml                   | 连接览沃雷达设备<br>向外发布点云数据                         |
+| livox_component.launch.yaml         | 进程内通信模式（rclcpp_component）<br>连接览沃雷达设备<br>向外发布点云数据 |
 
 ### 4.2 览沃 ROS2 驱动程序内部主要参数配置说明
 
@@ -126,6 +128,9 @@ colcon 安装请参考如下链接：
 | publish_freq | 设置点云发布频率 <br>浮点数据类型，推荐值 5.0，10.0，20.0，50.0 等。 | 10.0   |
 | multi_topic  | LiDAR 设备是否拥有独立的 topic 发布点云数据<br>0 -- 所有 LiDAR 设备共同使用同一个 topic 发送点云数据<br>1 -- 每个 LiDAR 设备各自拥有独立的 topic 发布点云数据 | 0      |
 | xfer_format  | 设置点云格式<br>0 -- 览沃 pointcloud2(PointXYZRTL) 点云格式<br>1 -- 览沃自定义点云数据格式<br>2 -- PCL库中标准 pointcloud2(pcl::PointXYZI) 点云格式 | 0      |
+| data_src     | 设置数据源<br>0 -- 网线直连LiDAR <br>1 -- Livox-HUB连接LiDAR | 0      |
+| user_config_path | LiDAR参数配置文件路径 | config/livox_lidar_config.json |
+| container_name | 仅livox_component.launch.yaml需要该参数<br>指定component_container的名称 | /ComponentManager |
 
 ### 4.3 览沃 ROS2 驱动程序点云数据详细说明
 
