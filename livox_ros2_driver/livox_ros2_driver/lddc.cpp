@@ -107,7 +107,7 @@ void Lddc::InitPointcloud2MsgHeader(sensor_msgs::msg::PointCloud2& cloud) {
   cloud.header.frame_id.assign(frame_id_);
   cloud.height = 1;
   cloud.width = 0;
-  cloud.fields.resize(6);
+  cloud.fields.resize(7);
   cloud.fields[0].offset = 0;
   cloud.fields[0].name = "x";
   cloud.fields[0].count = 1;
@@ -125,13 +125,17 @@ void Lddc::InitPointcloud2MsgHeader(sensor_msgs::msg::PointCloud2& cloud) {
   cloud.fields[3].count = 1;
   cloud.fields[3].datatype = sensor_msgs::msg::PointField::FLOAT32;
   cloud.fields[4].offset = 16;
-  cloud.fields[4].name = "tag";
+  cloud.fields[4].name = "offset_time";
   cloud.fields[4].count = 1;
-  cloud.fields[4].datatype = sensor_msgs::msg::PointField::UINT8;
-  cloud.fields[5].offset = 17;
-  cloud.fields[5].name = "line";
+  cloud.fields[4].datatype = sensor_msgs::msg::PointField::UINT32;
+  cloud.fields[5].offset = 20;
+  cloud.fields[5].name = "tag";
   cloud.fields[5].count = 1;
   cloud.fields[5].datatype = sensor_msgs::msg::PointField::UINT8;
+  cloud.fields[6].offset = 21;
+  cloud.fields[6].name = "line";
+  cloud.fields[6].count = 1;
+  cloud.fields[6].datatype = sensor_msgs::msg::PointField::UINT8;
   cloud.point_step = sizeof(LivoxPointXyzrtl);
 }
 
@@ -140,6 +144,8 @@ uint32_t Lddc::PublishPointcloud2(LidarDataQueue *queue, uint32_t packet_num,
   uint64_t timestamp = 0;
   uint64_t last_timestamp = 0;
   uint32_t published_packet = 0;
+  uint32_t packet_offset_time = 0;  /** unit:ns */
+  uint64_t packet_base_time = 0; /** unit:ns */
 
   StoragePacket storage_packet;
   LidarDevice *lidar = &lds_->lidars_[handle];
@@ -155,10 +161,12 @@ uint32_t Lddc::PublishPointcloud2(LidarDataQueue *queue, uint32_t packet_num,
                     sizeof(LivoxPointXyzrtl));
   cloud.point_step = sizeof(LivoxPointXyzrtl);
 
+  uint8_t point_buf[2048];
   uint8_t *point_base = cloud.data.data();
   uint8_t data_source = lidar->data_src;
   uint32_t line_num = GetLaserLineNumber(lidar->info.type);
   uint32_t echo_num = GetEchoNumPerPoint(lidar->raw_data_type);
+  uint32_t point_interval = GetPointInterval(lidar->info.type);
   uint32_t is_zero_packet = 0;
   while ((published_packet < packet_num) && !QueueIsEmpty(queue)) {
     QueuePrePop(queue, &storage_packet);
@@ -178,7 +186,11 @@ uint32_t Lddc::PublishPointcloud2(LidarDataQueue *queue, uint32_t packet_num,
     }
     /** Use the first packet timestamp as pointcloud2 msg timestamp */
     if (!published_packet) {
+      packet_base_time = timestamp;
+      packet_offset_time = 0;
       cloud.header.stamp = rclcpp::Time(timestamp);
+    } else {
+      packet_offset_time = (uint32_t)(timestamp - packet_base_time);
     }
     uint32_t single_point_num = storage_packet.point_num * echo_num;
 
@@ -186,7 +198,7 @@ uint32_t Lddc::PublishPointcloud2(LidarDataQueue *queue, uint32_t packet_num,
       PointConvertHandler pf_point_convert =
           GetConvertHandler(lidar->raw_data_type);
       if (pf_point_convert) {
-        point_base = pf_point_convert(point_base, raw_packet,
+        pf_point_convert(point_buf, raw_packet,
             lidar->extrinsic_parameter, line_num);
       } else {
         /** Skip the packet */
@@ -197,6 +209,33 @@ uint32_t Lddc::PublishPointcloud2(LidarDataQueue *queue, uint32_t packet_num,
     } else {
       point_base = LivoxPointToPxyzrtl(point_base, raw_packet,
           lidar->extrinsic_parameter, line_num);
+    }
+    // fill pointcloud2 msg
+    LivoxPointXyzrtl *dst_point = (LivoxPointXyzrtl *)point_buf;
+    for(uint32_t i = 0; i < single_point_num; i++) {
+      uint32_t offset_time;
+      if (echo_num > 1) { /** dual return mode */
+        offset_time = packet_offset_time + (i / echo_num) * point_interval;
+      } else {
+        offset_time = packet_offset_time + i * point_interval;
+      }
+      
+      *reinterpret_cast<float*>(point_base) = dst_point->x;
+      point_base += 4;
+      *reinterpret_cast<float*>(point_base) = dst_point->y;
+      point_base += 4;
+      *reinterpret_cast<float*>(point_base) = dst_point->z;
+      point_base += 4;
+      *reinterpret_cast<float*>(point_base) = dst_point->reflectivity;
+      point_base += 4;
+      *reinterpret_cast<uint32_t*>(point_base) = offset_time;
+      point_base += 4;
+      *reinterpret_cast<uint8_t*>(point_base) = dst_point->tag;
+      point_base += 1;
+      *reinterpret_cast<uint8_t*>(point_base) = dst_point->line;
+      point_base += 1;
+
+      dst_point++;
     }
 
     if (!is_zero_packet) {
