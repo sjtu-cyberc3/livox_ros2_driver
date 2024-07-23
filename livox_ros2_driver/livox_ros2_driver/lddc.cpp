@@ -136,7 +136,7 @@ void Lddc::InitPointcloud2MsgHeader(sensor_msgs::msg::PointCloud2& cloud) {
   cloud.fields[6].name = "line";
   cloud.fields[6].count = 1;
   cloud.fields[6].datatype = sensor_msgs::msg::PointField::UINT8;
-  cloud.point_step = sizeof(LivoxPointXyzrtl);
+  cloud.point_step = sizeof(LivoxPointXyzrtl) + 4;
 }
 
 uint32_t Lddc::PublishPointcloud2(LidarDataQueue *queue, uint32_t packet_num,
@@ -158,8 +158,8 @@ uint32_t Lddc::PublishPointcloud2(LidarDataQueue *queue, uint32_t packet_num,
   auto &cloud = *p_cloud;
   InitPointcloud2MsgHeader(cloud);
   cloud.data.resize(packet_num * kMaxPointPerEthPacket *
-                    sizeof(LivoxPointXyzrtl));
-  cloud.point_step = sizeof(LivoxPointXyzrtl);
+                    (sizeof(LivoxPointXyzrtl) + 4));
+  cloud.point_step = sizeof(LivoxPointXyzrtl) + 4;
 
   uint8_t point_buf[2048];
   uint8_t *point_base = cloud.data.data();
