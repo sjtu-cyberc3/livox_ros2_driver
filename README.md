@@ -138,7 +138,8 @@ All internal parameters of Livox_ros2_driver are in the launch file. Below are d
 float32 x               # X axis, unit:m
 float32 y               # Y axis, unit:m
 float32 z               # Z axis, unit:m
-float32 intensity         # the value is reflectivity, 0.0~255.0
+float32 intensity       # the value is reflectivity, 0.0~255.0
+uint32 offset_time      # offset time relative to the ros header time, unit: ns
 uint8 tag               # livox tag
 uint8 line              # laser number in lidar
 ```
